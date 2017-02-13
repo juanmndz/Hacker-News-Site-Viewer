@@ -2,10 +2,12 @@ import React, { Component } from 'react';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
+const DEFAULT_PAGE = 0;
+
 const PATH_BASE = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH = '/search';
 const PARAM_SEARCH = 'query=';
-
+const PARAM_PAGE = 'page=';
 
 // const isSearched = (searchTerm) => (item) => {
 //   return !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -36,29 +38,38 @@ class App extends Component {
 
   setSearchTopstories = (result) => {
     console.log("this.state", this);
-    this.setState({ result });
+    const { hits, page } = result;
+    const oldHits = page !== 0
+    ? this.state.result.hits
+    : [];
+    const updatedHits = [
+      ...oldHits,
+      ...hits
+    ];
+    this.setState({
+      result: { hits: updatedHits, page }
+    });
   }
-  fetchSearchTopstories = (searchTerm) => {
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
+  fetchSearchTopstories = (searchTerm, page) => {
+    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`)
     .then(response => response.json())
     .then(result => this.setSearchTopstories(result));
   }
 
   onSearchSubmit = (event) => {
     const { searchTerm } = this.state;
-    this.fetchSearchTopstories(searchTerm);
+    this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
     event.preventDefault();
   }
   componentDidMount() {
     const { searchTerm } = this.state;
-    this.fetchSearchTopstories(searchTerm);
+    this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
   }
 
 
   render() {
     const {searchTerm, result} = this.state;
-
-    if (!result) {return null;}
+    const page = (result && result.page) || 0;
 
     return (
       <div className="page">
@@ -77,6 +88,12 @@ class App extends Component {
               onDismiss={this.onDismiss}
             />
           }
+          <div className="interactions">
+            <Button onClick={() => this.fetchSearchTopstories(searchTerm, page + 1
+            )}>
+            More
+          </Button>
+        </div>
         </div>
       );
     }
